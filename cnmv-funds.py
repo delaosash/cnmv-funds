@@ -19,8 +19,12 @@ class Security():
         self.currency = currency
         self.value = value
         self.percentage = percentage
+        self.funds = []
+    def add_fund(self, fund_info):
+        self.funds.append(fund_info)
     def __str__(self):
-        return self.isin + ' - ' + self.name + ' - ' + self.currency  + ' - ' + str(self.value)  + ' - ' + str(self.percentage)
+        return self.isin + ' - ' + self.name + ' - ' + self.currency  + ' - ' + str(self.value)  + ' - ' + str(self.percentage) \
+             + ' - ' + str(self.funds)
 
 def guess_securities_page_range_and_name(filename):
     pdf_file = open(filename, 'rb')
@@ -43,13 +47,11 @@ def guess_securities_page_range_and_name(filename):
             page -= 1
     return page + 1, pdf_reader.numPages, fund_name
 
-def read_securities():
-    filename = sys.argv[1] 
+def read_securities(securities, filename, fund_percentage):
     page_range_and_name = guess_securities_page_range_and_name(filename)
     str_range = str(page_range_and_name[0]) + PAGE_RANGE_SEPARATOR + str(page_range_and_name[1])
     fund_name = page_range_and_name[2]
     df = tabula.read_pdf(filename, pages=str_range)
-    securities = dict()
     for item_value in df.values:
         parse_res = re.match(ISIN_REGEXP, str(item_value[0]))
         if parse_res:
@@ -60,17 +62,34 @@ def read_securities():
             try:
                 value = int(item_value[2].strip().replace('.', ''))
                 percentage = float(item_value[3].strip().replace(',', '.'))
-                security = Security(isin, name, currency, value, percentage)
-                securities[isin] = security
+                if percentage > 0.0:
+                    security_fund_info = fund_name, percentage, value
+                    portfolio_percentage = percentage * fund_percentage     
+                    portfolio_value = value * fund_percentage               
+                    if isin in securities:
+                        security = securities[isin]
+                        security.percentage += portfolio_percentage
+                        security.value += portfolio_value 
+                    else:
+                        security = Security(isin, name, currency, portfolio_value, portfolio_percentage)
+                        securities[isin] = security
+                    security.add_fund(security_fund_info)
             except Exception:
-                logging.warning('%s not parsed, maybe an empty value', isin)
-    return securities
+                logging.warning('%s - %s not parsed, maybe an empty value', isin_and_name[0], isin_and_name[1])
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
-    securities = read_securities()
-    for security in securities.values():
+    securities = dict()
+    for item in sys.argv:
+        idx = sys.argv.index(item)
+        if idx % 2 != 0:
+            filename = item
+            fund_percentage = int(sys.argv[idx + 1]) / 100
+            read_securities(securities, filename, fund_percentage)
+    sorted_list = sorted(securities.values(), key = lambda s: s.percentage, reverse = True)
+    total_percentage = 0.0
+    for security in sorted_list:
+        total_percentage += security.percentage
         print(security)
     logging.info('Total: %d securities', len(securities))
-
-
+    logging.info('Percentage invested: %f', total_percentage)
