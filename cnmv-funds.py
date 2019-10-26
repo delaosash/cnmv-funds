@@ -12,20 +12,21 @@ UNKNOWN_FUND_NAME = 'unknown'
 ISIN_REGEXP = r'\b([A-Z]{2})((?![A-Z]{10}\b)[A-Z0-9]{10})\b'
 PAGE_RANGE_SEPARATOR = '-'
 SECURITY_SEPARATOR = '-'
+TYPE_NAME_SEPARATOR = '|'
 EXCEL_FILENAME = 'portfolio.xlsx'
 
 class Security():
-    def __init__(self, isin, name, currency, value, percentage):
+    def __init__(self, isin, sec_type, name, currency, percentage):
         self.isin = isin
+        self.sec_type = sec_type
         self.name = name
         self.currency = currency
-        self.value = value
         self.percentage = percentage
         self.funds = []
     def add_fund(self, fund_info):
         self.funds.append(fund_info)
     def __str__(self):
-        return self.isin + ' - ' + self.name + ' - ' + self.currency  + ' - ' + str(self.value)  + ' - ' + str(self.percentage) \
+        return self.isin + ' - ' + self.sec_type + ' - ' + self.name + ' - ' + self.currency  + ' - ' + ' - ' + str(self.percentage) \
              + ' - ' + str(self.funds)
 
 def guess_securities_page_range_and_name(filename):
@@ -59,7 +60,9 @@ def read_securities(securities, filename, fund_percentage):
         if parse_res:
             isin_and_name = parse_res.string.split(SECURITY_SEPARATOR)
             isin = isin_and_name[0].strip()
-            name = isin_and_name[1].strip()
+            type_and_name = isin_and_name[1].strip().split(TYPE_NAME_SEPARATOR)
+            sec_type = type_and_name[0].lower()
+            name = type_and_name[1]
             currency = item_value[1].strip()
             try:
                 value = int(item_value[2].strip().replace('.', ''))
@@ -67,13 +70,11 @@ def read_securities(securities, filename, fund_percentage):
                 if percentage > 0.0:
                     security_fund_info = fund_name, percentage, value
                     portfolio_percentage = percentage * fund_percentage     
-                    portfolio_value = value * fund_percentage               
                     if isin in securities:
                         security = securities[isin]
                         security.percentage += portfolio_percentage
-                        security.value += portfolio_value 
                     else:
-                        security = Security(isin, name, currency, portfolio_value, portfolio_percentage)
+                        security = Security(isin, sec_type, name, currency, portfolio_percentage)
                         securities[isin] = security
                     security.add_fund(security_fund_info)
             except Exception:
@@ -84,9 +85,9 @@ def write_to_excel(securities):
     worksheet = workbook.add_worksheet()
     for i in range(len(securities)):
         worksheet.write(i, 0, securities[i].isin)
-        worksheet.write(i, 1, securities[i].name)
-        worksheet.write(i, 2, securities[i].currency)
-        worksheet.write(i, 3, securities[i].value)
+        worksheet.write(i, 1, securities[i].sec_type)
+        worksheet.write(i, 2, securities[i].name)
+        worksheet.write(i, 3, securities[i].currency)
         worksheet.write(i, 4, securities[i].percentage)
         for j in range(len(securities[i].funds)):
             worksheet.write(i, 5 + j, securities[i].funds[j][0])
