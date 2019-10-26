@@ -14,6 +14,10 @@ PAGE_RANGE_SEPARATOR = '-'
 SECURITY_SEPARATOR = '-'
 TYPE_NAME_SEPARATOR = '|'
 EXCEL_FILENAME = 'portfolio.xlsx'
+LIQUIDITY_ISIN = 'ES0000000000'
+LIQUIDITY_TYPE = 'liquidez'
+LIQUIDITY_NAME = 'Liquidez'
+LIQUIDITY_CURRENCY = 'EUR'
 
 class Security():
     def __init__(self, isin, sec_type, name, currency, percentage):
@@ -109,4 +113,6 @@ if __name__ == "__main__":
         print(security)
     logging.info('Total: %d securities', len(securities))
     logging.info('Percentage invested: %f', total_percentage)
+    liquidity = Security(LIQUIDITY_ISIN, LIQUIDITY_TYPE, LIQUIDITY_NAME, LIQUIDITY_CURRENCY, 100 - total_percentage)
+    securities_sorted_list.append(liquidity)
     write_to_excel(securities_sorted_list)
