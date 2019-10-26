@@ -4,6 +4,7 @@ import PyPDF2
 import re
 import sys
 import tabula
+import xlsxwriter
 
 TEXT_TO_FIND = 'Detalle de inversiones financieras'
 FUND_NAME_DELIMITER = 'Nº Registro CNMV'
@@ -11,6 +12,7 @@ UNKNOWN_FUND_NAME = 'unknown'
 ISIN_REGEXP = r'\b([A-Z]{2})((?![A-Z]{10}\b)[A-Z0-9]{10})\b'
 PAGE_RANGE_SEPARATOR = '-'
 SECURITY_SEPARATOR = '-'
+EXCEL_FILENAME = 'portfolio.xlsx'
 
 class Security():
     def __init__(self, isin, name, currency, value, percentage):
@@ -77,6 +79,19 @@ def read_securities(securities, filename, fund_percentage):
             except Exception:
                 logging.warning('%s - %s not parsed, maybe an empty value', isin_and_name[0], isin_and_name[1])
 
+def write_to_excel(securities):
+    workbook = xlsxwriter.Workbook(EXCEL_FILENAME)
+    worksheet = workbook.add_worksheet()
+    for i in range(len(securities)):
+        worksheet.write(i, 0, securities[i].isin)
+        worksheet.write(i, 1, securities[i].name)
+        worksheet.write(i, 2, securities[i].currency)
+        worksheet.write(i, 3, securities[i].value)
+        worksheet.write(i, 4, securities[i].percentage)
+        for j in range(len(securities[i].funds)):
+            worksheet.write(i, 5 + j, securities[i].funds[j][0])
+    workbook.close()
+
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
     securities = dict()
@@ -86,10 +101,11 @@ if __name__ == "__main__":
             filename = item
             fund_percentage = int(sys.argv[idx + 1]) / 100
             read_securities(securities, filename, fund_percentage)
-    sorted_list = sorted(securities.values(), key = lambda s: s.percentage, reverse = True)
+    securities_sorted_list = sorted(securities.values(), key = lambda s: s.percentage, reverse = True)
     total_percentage = 0.0
-    for security in sorted_list:
+    for security in securities_sorted_list:
         total_percentage += security.percentage
         print(security)
     logging.info('Total: %d securities', len(securities))
     logging.info('Percentage invested: %f', total_percentage)
+    write_to_excel(securities_sorted_list)

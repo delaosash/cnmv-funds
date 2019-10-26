@@ -3,6 +3,7 @@
 
 ### My own test files ###
 *.pdf
+*.xlsx
 
 ### macOS ###
 # General
