@@ -19,6 +19,14 @@ LIQUIDITY_TYPE = 'liquidez'
 LIQUIDITY_NAME = 'Liquidez'
 LIQUIDITY_CURRENCY = 'EUR'
 
+class FundInfo():
+    def __init__(self, name, percentage, value):
+        self.name = name
+        self.percentage = percentage
+        self.value = value
+    def __str__(self):
+        return self.name + '; ' + str(self.percentage) + '; ' + str(self.value)
+
 class Security():
     def __init__(self, isin, sec_type, name, currency, percentage):
         self.isin = isin
@@ -30,8 +38,12 @@ class Security():
     def add_fund(self, fund_info):
         self.funds.append(fund_info)
     def __str__(self):
-        return self.isin + ' - ' + self.sec_type + ' - ' + self.name + ' - ' + self.currency  + ' - ' + ' - ' + str(self.percentage) \
-             + ' - ' + str(self.funds)
+        ret_str = self.isin + ' - ' + self.sec_type + ' - ' + self.name + ' - ' + self.currency  + ' - ' + str(self.percentage)
+        if (len(self.funds) > 0):
+            ret_str += ' ### funds: '
+            for fund_info in self.funds:
+                ret_str += str(fund_info) + ' ## '
+        return ret_str
 
 def guess_securities_page_range_and_name(filename):
     pdf_file = open(filename, 'rb')
@@ -72,7 +84,7 @@ def read_securities(securities, filename, fund_percentage):
                 value = int(item_value[2].strip().replace('.', ''))
                 percentage = float(item_value[3].strip().replace(',', '.'))
                 if percentage > 0.0:
-                    security_fund_info = fund_name, percentage, value
+                    security_fund_info = FundInfo(fund_name, percentage, value)
                     portfolio_percentage = percentage * fund_percentage     
                     if isin in securities:
                         security = securities[isin]
@@ -94,7 +106,7 @@ def write_to_excel(securities):
         worksheet.write(i, 3, securities[i].currency)
         worksheet.write(i, 4, securities[i].percentage)
         for j in range(len(securities[i].funds)):
-            worksheet.write(i, 5 + j, securities[i].funds[j][0])
+            worksheet.write(i, 5 + j, securities[i].funds[j].name)
     workbook.close()
 
 if __name__ == "__main__":
