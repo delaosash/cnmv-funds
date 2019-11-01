@@ -99,6 +99,9 @@ def read_securities(securities, filename, fund_percentage):
 def write_to_excel(securities):
     workbook = xlsxwriter.Workbook(EXCEL_FILENAME)
     worksheet = workbook.add_worksheet()
+    worksheet.set_column('A:A', 20)
+    worksheet.set_column('C:C', 30)
+    worksheet.set_column('F:H', 30)
     for i in range(len(securities)):
         worksheet.write(i, 0, securities[i].isin)
         worksheet.write(i, 1, securities[i].sec_type)
