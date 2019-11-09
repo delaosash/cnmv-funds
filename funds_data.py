@@ -2,13 +2,18 @@ from mongoengine import EmbeddedDocument, EmbeddedDocumentField, Document, Float
 
 DATABASE_NAME = 'cnmv_funds'
 
+class Fund(Document):
+    name = StringField(required=True)
+    percentage = FloatField(required=True)
+    def __str__(self):
+        return self.name + '; ' + str(self.percentage)
+
 class FundInfo(EmbeddedDocument):
     name = StringField(required=True)
     percentage = FloatField(required=True)
     value = IntField(required=True)
     def __str__(self):
         return self.name + '; ' + str(self.percentage) + '; ' + str(self.value)
-    
 
 class Security(Document):
     isin = StringField(max_length=12, required = True)

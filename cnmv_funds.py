@@ -7,6 +7,7 @@ import tabula
 import xlsxwriter
 from funds_data import Security
 from funds_data import FundInfo
+from funds_data import Fund
 
 TEXT_TO_FIND = 'Detalle de inversiones financieras'
 FUND_NAME_DELIMITER = 'Nº Registro CNMV'
@@ -73,10 +74,9 @@ def read_securities(securities, filename, fund_percentage):
                     security.add_fund(fund_info)
             except Exception:
                 logging.warning('%s - %s not parsed, maybe an empty value', isin_and_name[0], isin_and_name[1])
+    return fund_name
 
 def write_to_excel_and_db(securities):
-    if SAVE_TO_DB:
-        Security.drop_collection()
     workbook = xlsxwriter.Workbook(EXCEL_FILENAME)
     worksheet = workbook.add_worksheet()
     worksheet.set_column('A:A', 20)
@@ -96,13 +96,19 @@ def write_to_excel_and_db(securities):
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
+    if SAVE_TO_DB:
+        Security.drop_collection()
+        Fund.drop_collection()
     securities = dict()
     for item in sys.argv:
         idx = sys.argv.index(item)
         if idx % 2 != 0:
             filename = item
             fund_percentage = int(sys.argv[idx + 1]) / 100
-            read_securities(securities, filename, fund_percentage)
+            fund_name = read_securities(securities, filename, fund_percentage)
+            if SAVE_TO_DB:
+                fund = Fund(name = fund_name, percentage = fund_percentage * 100)
+                fund.save()
     securities_sorted_list = sorted(securities.values(), key = lambda s: s.percentage, reverse = True)
     total_percentage = 0.0
     for security in securities_sorted_list:
