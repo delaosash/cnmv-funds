@@ -21,6 +21,8 @@ LIQUIDITY_TYPE = 'liquidez'
 LIQUIDITY_NAME = 'Liquidez'
 LIQUIDITY_CURRENCY = 'EUR'
 
+SAVE_TO_DB = True
+
 def guess_securities_page_range_and_name(filename):
     pdf_file = open(filename, 'rb')
     pdf_reader = PyPDF2.PdfFileReader(pdf_file, strict=False)
@@ -60,7 +62,7 @@ def read_securities(securities, filename, fund_percentage):
                 value = int(item_value[2].strip().replace('.', ''))
                 percentage = float(item_value[3].strip().replace(',', '.'))
                 if percentage > 0.0:
-                    security_fund_info = FundInfo(fund_name, percentage, value)
+                    fund_info = FundInfo(name = fund_name, percentage = percentage, value = value)
                     portfolio_percentage = percentage * fund_percentage     
                     if isin in securities:
                         security = securities[isin]
@@ -68,11 +70,13 @@ def read_securities(securities, filename, fund_percentage):
                     else:
                         security = Security(isin, sec_type, name, currency, portfolio_percentage)
                         securities[isin] = security
-                    security.add_fund(security_fund_info)
+                    security.add_fund(fund_info)
             except Exception:
                 logging.warning('%s - %s not parsed, maybe an empty value', isin_and_name[0], isin_and_name[1])
 
-def write_to_excel(securities):
+def write_to_excel_and_db(securities):
+    if SAVE_TO_DB:
+        Security.drop_collection()
     workbook = xlsxwriter.Workbook(EXCEL_FILENAME)
     worksheet = workbook.add_worksheet()
     worksheet.set_column('A:A', 20)
@@ -86,6 +90,8 @@ def write_to_excel(securities):
         worksheet.write(i, 4, securities[i].percentage)
         for j in range(len(securities[i].funds)):
             worksheet.write(i, 5 + j, securities[i].funds[j].name)
+        if SAVE_TO_DB:
+            securities[i].save()
     workbook.close()
 
 if __name__ == "__main__":
@@ -106,4 +112,4 @@ if __name__ == "__main__":
     logging.info('Percentage invested: %f', total_percentage)
     liquidity = Security(LIQUIDITY_ISIN, LIQUIDITY_TYPE, LIQUIDITY_NAME, LIQUIDITY_CURRENCY, 100 - total_percentage)
     securities_sorted_list.append(liquidity)
-    write_to_excel(securities_sorted_list)
+    write_to_excel_and_db(securities_sorted_list)
