@@ -21,6 +21,7 @@ LIQUIDITY_ISIN = 'ES0000000000'
 LIQUIDITY_TYPE = 'liquidez'
 LIQUIDITY_NAME = 'Liquidez'
 LIQUIDITY_CURRENCY = 'EUR'
+STOCK_IDENTIFIER = 'acciones'
 
 SAVE_TO_DB = True
 
@@ -49,6 +50,9 @@ def read_securities(securities, filename, fund_percentage):
     page_range_and_name = guess_securities_page_range_and_name(filename)
     str_range = str(page_range_and_name[0]) + PAGE_RANGE_SEPARATOR + str(page_range_and_name[1])
     fund_name = page_range_and_name[2]
+    stocks = 0.0
+    bonds = 0.0
+    cash = 0.0
     df = tabula.read_pdf(filename, pages=str_range)
     for item_value in df.values:
         parse_res = re.match(ISIN_REGEXP, str(item_value[0]))
@@ -72,9 +76,14 @@ def read_securities(securities, filename, fund_percentage):
                         security = Security(isin, sec_type, name, currency, portfolio_percentage)
                         securities[isin] = security
                     security.add_fund(fund_info)
+                    if sec_type == STOCK_IDENTIFIER:
+                        stocks += percentage
+                    else:
+                        bonds += percentage
             except Exception:
                 logging.warning('%s - %s not parsed, maybe an empty value', isin_and_name[0], isin_and_name[1])
-    return fund_name
+    cash = 100 - stocks - bonds
+    return fund_name, stocks, bonds, cash
 
 def write_to_excel_and_db(securities):
     workbook = xlsxwriter.Workbook(EXCEL_FILENAME)
@@ -105,9 +114,10 @@ if __name__ == "__main__":
         if idx % 2 != 0:
             filename = item
             fund_percentage = int(sys.argv[idx + 1]) / 100
-            fund_name = read_securities(securities, filename, fund_percentage)
+            fund_name_and_assets = read_securities(securities, filename, fund_percentage)
             if SAVE_TO_DB:
-                fund = Fund(name = fund_name, percentage = fund_percentage * 100)
+                fund = Fund(name = fund_name_and_assets[0], percentage = fund_percentage * 100, \
+                    stocks = fund_name_and_assets[1], bonds = fund_name_and_assets[2], cash = fund_name_and_assets[3])
                 fund.save()
     securities_sorted_list = sorted(securities.values(), key = lambda s: s.percentage, reverse = True)
     total_percentage = 0.0

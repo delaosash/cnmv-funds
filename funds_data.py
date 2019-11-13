@@ -5,8 +5,11 @@ DATABASE_NAME = 'cnmv_funds'
 class Fund(Document):
     name = StringField(required=True)
     percentage = FloatField(required=True)
+    stocks = FloatField(required=True)
+    bonds = FloatField(required=True)
+    cash = FloatField(required=True)
     def __str__(self):
-        return self.name + '; ' + str(self.percentage)
+        return self.name + '; ' + str(self.percentage) + '; ' + str(self.stocks) + '; ' + str(self.bonds) + '; ' + str(self.cash)
 
 class FundInfo(EmbeddedDocument):
     name = StringField(required=True)
