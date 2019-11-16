@@ -97,8 +97,8 @@ def write_to_excel_and_db(securities):
         worksheet.write(i, 2, securities[i].name)
         worksheet.write(i, 3, securities[i].currency)
         worksheet.write(i, 4, securities[i].percentage)
-        for j in range(len(securities[i].funds)):
-            worksheet.write(i, 5 + j, securities[i].funds[j].name)
+        for j in range(len(securities[i].funds_info)):
+            worksheet.write(i, 5 + j, securities[i].funds_info[j].name)
         if SAVE_TO_DB:
             securities[i].save()
     workbook.close()

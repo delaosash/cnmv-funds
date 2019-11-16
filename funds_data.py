@@ -24,14 +24,14 @@ class Security(Document):
     name = StringField(required = True)
     currency = StringField(max_length = 3, required = True)
     percentage = FloatField(required = True)
-    funds = ListField(EmbeddedDocumentField(FundInfo))
+    funds_info = ListField(EmbeddedDocumentField(FundInfo))
     def add_fund(self, fund_info):
-        self.funds.append(fund_info)
+        self.funds_info.append(fund_info)
     def __str__(self):
         ret_str = self.isin + ' - ' + self.sec_type + ' - ' + self.name + ' - ' + self.currency  + ' - ' + str(self.percentage)
-        if (len(self.funds) > 0):
+        if (len(self.funds_info) > 0):
             ret_str += ' ### funds: '
-            for fund_info in self.funds:
+            for fund_info in self.funds_info:
                 ret_str += str(fund_info) + ' ## '
         return ret_str
 
