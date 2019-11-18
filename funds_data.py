@@ -3,7 +3,7 @@ from mongoengine import EmbeddedDocument, EmbeddedDocumentField, Document, Float
 DATABASE_NAME = 'cnmv_funds'
 
 class Fund(Document):
-    name = StringField(required=True)
+    name = StringField(required=True, unique=True)
     percentage = FloatField(required=True)
     stocks = FloatField(required=True)
     bonds = FloatField(required=True)
@@ -19,7 +19,7 @@ class FundInfo(EmbeddedDocument):
         return self.name + '; ' + str(self.percentage) + '; ' + str(self.value)
 
 class Security(Document):
-    isin = StringField(max_length=12, required = True)
+    isin = StringField(max_length=12, required=True, unique=True)
     sec_type = StringField(required = True)
     name = StringField(required = True)
     currency = StringField(max_length = 3, required = True)
