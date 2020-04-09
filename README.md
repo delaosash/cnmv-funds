@@ -1,24 +1,24 @@
 # cnmv-funds
-Import to an Excel file, portfolio securities from [CNMV](http://cnmv.es/portal/home.aspx) periodic fund reports. Optionally, data can also be loaded into a MongoDB database.
+Import to an Excel file, portfolio securities from [CNMV](http://cnmv.es/portal/home.aspx) periodic fund reports (PDF format). Optionally, data can also be loaded into a MongoDB database.
 
-Importa a hoja Excel, posiciones de un informe de fondo de inversión español publicado en la web de la [CNMV](http://cnmv.es/portal/home.aspx).
+Importa a hoja Excel, posiciones de un informe de fondo de inversión español publicado en la web de la [CNMV](http://cnmv.es/portal/home.aspx) (formato PDF).
 Opcionalmente, también se pueden cargar los datos en una base de datos MongoDB.
 
 # Purpose
 Nothing really serious, just a small example of utility programmed in python. I'm trying to follow the python coding conventions. I'm not a Python expert.
 
-# Install
+# Installing
 * Install python and pip.
-* Install Java 8 (a tabula-py dependency).
+* Install java 8 (a tabula-py dependency).
 * Install required python libraries:
   - pip install PyPDF2
   - pip install tabula-py
   - pip install XlsxWriter
   - pip install mongoengine
-* By default, MongoDB functionality is disabled.
+* By default, MongoDB functionality is disabled, so no MongoDB database server required to start.
 
 # Use
-* Download a set of fund report files. An example: https://www.cnmv.es/portal/Consultas/IIC/Fondo.aspx?nif=V82732942&vista=1
+* Download a set of fund report files. An example can be found here: https://www.cnmv.es/portal/Consultas/IIC/Fondo.aspx?nif=V82732942&vista=1
 * Call the program, passing the files and each one' s percentage in our portfolio, as arguments. All percentages must add up to 100. A file named *portfolio.xlsx* will be generated.
 * Example:
   ```
