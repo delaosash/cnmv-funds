@@ -23,7 +23,7 @@ LIQUIDITY_NAME = 'Liquidez'
 LIQUIDITY_CURRENCY = 'EUR'
 STOCK_IDENTIFIER = 'acciones'
 
-SAVE_TO_DB = True
+SAVE_TO_DB = False
 
 def guess_securities_page_range_and_name(filename):
     pdf_file = open(filename, 'rb')
@@ -46,6 +46,37 @@ def guess_securities_page_range_and_name(filename):
             page -= 1
     return page + 1, pdf_reader.numPages, fund_name
 
+def process_security(sec_desc, sec_info, fund_name, fund_percentage):
+    stocks = 0.0
+    bonds = 0.0
+    isin_and_name = sec_desc.string.split(SECURITY_SEPARATOR)
+    isin = isin_and_name[0].strip()
+    type_and_name = isin_and_name[1].strip().split(TYPE_NAME_SEPARATOR)
+    sec_type = type_and_name[0].lower()
+    name = type_and_name[1]
+    currency = sec_info[1].strip()
+    try:
+        value = int(sec_info[2].strip().replace('.', ''))
+        percentage = float(sec_info[3].strip().replace(',', '.'))
+        if percentage > 0.0:
+            fund_info = FundInfo(name = fund_name, percentage = percentage, value = value)
+            portfolio_percentage = percentage * fund_percentage     
+            if isin in securities:
+                security = securities[isin]
+                security.percentage += portfolio_percentage
+            else:
+                security = Security(isin = isin, sec_type = sec_type, name = name, currency = currency, \
+                    percentage = portfolio_percentage)
+                securities[isin] = security
+            security.add_fund(fund_info)
+            if sec_type == STOCK_IDENTIFIER:
+                stocks = percentage
+            else:
+                bonds = percentage
+    except Exception as e:
+        logging.warning('%s - %s not parsed, maybe an empty value. Error: %s', isin_and_name[0], isin_and_name[1], e)
+    return stocks, bonds
+
 def read_securities(securities, filename, fund_percentage):
     page_range_and_name = guess_securities_page_range_and_name(filename)
     str_range = str(page_range_and_name[0]) + PAGE_RANGE_SEPARATOR + str(page_range_and_name[1])
@@ -53,35 +84,16 @@ def read_securities(securities, filename, fund_percentage):
     stocks = 0.0
     bonds = 0.0
     cash = 0.0
-    df = tabula.read_pdf(filename, pages=str_range)
-    for item_value in df.values:
-        parse_res = re.match(ISIN_REGEXP, str(item_value[0]))
-        if parse_res:
-            isin_and_name = parse_res.string.split(SECURITY_SEPARATOR)
-            isin = isin_and_name[0].strip()
-            type_and_name = isin_and_name[1].strip().split(TYPE_NAME_SEPARATOR)
-            sec_type = type_and_name[0].lower()
-            name = type_and_name[1]
-            currency = item_value[1].strip()
-            try:
-                value = int(item_value[2].strip().replace('.', ''))
-                percentage = float(item_value[3].strip().replace(',', '.'))
-                if percentage > 0.0:
-                    fund_info = FundInfo(name = fund_name, percentage = percentage, value = value)
-                    portfolio_percentage = percentage * fund_percentage     
-                    if isin in securities:
-                        security = securities[isin]
-                        security.percentage += portfolio_percentage
-                    else:
-                        security = Security(isin, sec_type, name, currency, portfolio_percentage)
-                        securities[isin] = security
-                    security.add_fund(fund_info)
-                    if sec_type == STOCK_IDENTIFIER:
-                        stocks += percentage
-                    else:
-                        bonds += percentage
-            except Exception:
-                logging.warning('%s - %s not parsed, maybe an empty value', isin_and_name[0], isin_and_name[1])
+    dataframes = tabula.read_pdf(filename, pages=str_range)
+    for df in dataframes:
+        for item_value in df.values:
+            parse_res = re.match(ISIN_REGEXP, str(item_value[0]))
+            if parse_res:
+                sec_percentage = process_security(parse_res, item_value, fund_name, fund_percentage)
+                if sec_percentage[0] > 0:
+                    stocks += sec_percentage[0]
+                else:
+                    bonds += sec_percentage[1]
     cash = 100 - stocks - bonds
     return fund_name, stocks, bonds, cash
 
@@ -126,6 +138,7 @@ if __name__ == "__main__":
         print(security)
     logging.info('Total: %d securities', len(securities))
     logging.info('Percentage invested: %f', total_percentage)
-    liquidity = Security(LIQUIDITY_ISIN, LIQUIDITY_TYPE, LIQUIDITY_NAME, LIQUIDITY_CURRENCY, 100 - total_percentage)
+    liquidity = Security(isin=LIQUIDITY_ISIN, sec_type=LIQUIDITY_TYPE, name=LIQUIDITY_NAME, currency=LIQUIDITY_CURRENCY, \
+        percentage=100 - total_percentage)
     securities_sorted_list.append(liquidity)
     write_to_excel_and_db(securities_sorted_list)
