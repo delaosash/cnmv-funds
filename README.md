@@ -31,7 +31,7 @@ Nothing really serious, just a small example of utility programmed in python. I'
   docker run --name myMongo -d -p 27017:27017 mongo
   ```
 * Run the python script with MongoDB support enabled:
-  - Edit the *cnmv_funds.py* file and set the *SAVE_TO_DB* to True (sorry it would be better a configuration file):
+  - Edit the *cnmv_funds.py* file and set the *SAVE_TO_DB* variable to True (sorry it would be better a configuration file):
   ```
   SAVE_TO_DB = True
   ```
@@ -43,7 +43,7 @@ Nothing really serious, just a small example of utility programmed in python. I'
   ```
   docker run --name myMongoExpress -e ME_CONFIG_MONGODB_SERVER=host.docker.internal -p 8081:8081 mongo-express
   ```
-  Open a browser an go to: http://localhost:8081
+  Open a browser and go to: http://localhost:8081
   
 # License
  [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
