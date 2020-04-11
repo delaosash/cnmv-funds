@@ -35,6 +35,10 @@ Nothing really serious, just a small example of utility programmed in python. I'
   ```
   SAVE_TO_DB = True
   ```
+  - Run the script:
+  ```
+  python cnmv_funds.py 'fund_A.pdf' '10' 'fund_B.pdf' '50' 'fund_C.pdf' '40'
+  ```
 * Run a mongo-express container for database navigation using a browser (optional):
   ```
   docker run --name myMongoExpress -e ME_CONFIG_MONGODB_SERVER=host.docker.internal -p 8081:8081 mongo-express
